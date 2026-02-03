@@ -4,12 +4,33 @@ from flask import Flask, request, jsonify
 from flasgger import Swagger
 
 app = Flask(__name__)
+
+API_KEY = "supersecret123"
+
 Swagger(app, template={
     "info": {
         "title": "Users API",
         "version": "1.0",
     },
+    "securityDefinitions": {
+        "ApiKey": {
+            "type": "apiKey",
+            "name": "ApiKey",
+            "in": "header",
+            "description": "Enter your API key, e.g.: supersecret123",
+        },
+    },
+    "security": [{"ApiKey": []}],
 })
+
+
+@app.before_request
+def check_auth():
+    if request.path.startswith(("/apidocs", "/flasgger", "/apispec")):
+        return
+    token = request.headers.get("ApiKey", "")
+    if token != API_KEY:
+        return jsonify({"error": "Unauthorized"}), 401
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "users.json")
 
