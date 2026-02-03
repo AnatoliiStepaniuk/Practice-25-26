@@ -2,26 +2,31 @@
   {
     "id": 1,
     "name": "Alice Johnson",
-    "email": "alice@example.com"
+    "email": "alice@example.com",
+    "age": 28
   },
   {
     "id": 2,
     "name": "Bob Smith",
-    "email": "bob@example.com"
+    "email": "bob@example.com",
+    "age": 34
   },
   {
     "id": 3,
     "name": "Charlie Brown",
-    "email": "charlie@example.com"
+    "email": "charlie@example.com",
+    "age": 22
   },
   {
     "id": 4,
     "name": "Diana Prince",
-    "email": "diana@example.com"
+    "email": "diana@example.com",
+    "age": 30
   },
   {
     "id": 5,
     "name": "Eve Davis",
-    "email": "eve@example.com"
+    "email": "eve@example.com",
+    "age": 26
   }
 ]

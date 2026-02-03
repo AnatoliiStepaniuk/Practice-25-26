@@ -41,6 +41,7 @@ def create_user():
         "id": next_id(users),
         "name": data["name"],
         "email": data.get("email", ""),
+        "age": data.get("age", None),
     }
     users.append(user)
     save_users(users)
@@ -71,6 +72,8 @@ def update_user(user_id):
         user["name"] = data["name"]
     if "email" in data:
         user["email"] = data["email"]
+    if "age" in data:
+        user["age"] = data["age"]
 
     save_users(users)
     return jsonify(user)
