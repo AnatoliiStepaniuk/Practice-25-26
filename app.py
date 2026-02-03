@@ -33,15 +33,18 @@ def get_users():
 @app.route("/users", methods=["POST"])
 def create_user():
     data = request.get_json()
-    if not data or "name" not in data:
-        return jsonify({"error": "Field 'name' is required"}), 400
+    if not data:
+        return jsonify({"error": "Request body is required"}), 400
+    missing = [f for f in ("name", "email", "age") if f not in data]
+    if missing:
+        return jsonify({"error": f"Missing required fields: {', '.join(missing)}"}), 400
 
     users = load_users()
     user = {
         "id": next_id(users),
         "name": data["name"],
-        "email": data.get("email", ""),
-        "age": data.get("age", None),
+        "email": data["email"],
+        "age": data["age"],
     }
     users.append(user)
     save_users(users)
