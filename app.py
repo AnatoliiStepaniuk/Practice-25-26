@@ -1,11 +1,14 @@
 import json
 import os
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flasgger import Swagger
 
+load_dotenv()
+
 app = Flask(__name__)
 
-API_KEY = "supersecret123"
+API_KEY = os.environ["API_KEY"]
 
 Swagger(app, template={
     "info": {
