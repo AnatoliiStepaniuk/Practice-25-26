@@ -28,5 +28,11 @@
     "name": "Eve Davis",
     "email": "eve@example.com",
     "age": 26
+  },
+  {
+    "id": 6,
+    "name": "Taras Ivanovich",
+    "email": "taras@example.com",
+    "age": 45
   }
 ]

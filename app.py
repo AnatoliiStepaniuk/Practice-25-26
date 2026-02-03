@@ -1,8 +1,15 @@
 import json
 import os
 from flask import Flask, request, jsonify
+from flasgger import Swagger
 
 app = Flask(__name__)
+Swagger(app, template={
+    "info": {
+        "title": "Users API",
+        "version": "1.0",
+    },
+})
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "users.json")
 
@@ -27,11 +34,56 @@ def next_id(users):
 
 @app.route("/users", methods=["GET"])
 def get_users():
+    """Get all users
+    ---
+    responses:
+      200:
+        description: A list of users
+        schema:
+          type: array
+          items:
+            properties:
+              id:
+                type: integer
+              name:
+                type: string
+              email:
+                type: string
+              age:
+                type: integer
+    """
     return jsonify(load_users())
 
 
 @app.route("/users", methods=["POST"])
 def create_user():
+    """Create a new user
+    ---
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          required:
+            - name
+            - email
+            - age
+          properties:
+            name:
+              type: string
+              example: John Doe
+            email:
+              type: string
+              example: john@example.com
+            age:
+              type: integer
+              example: 25
+    responses:
+      201:
+        description: User created
+      400:
+        description: Missing required fields
+    """
     data = request.get_json()
     if not data:
         return jsonify({"error": "Request body is required"}), 400
@@ -53,6 +105,19 @@ def create_user():
 
 @app.route("/users/<int:user_id>", methods=["GET"])
 def get_user(user_id):
+    """Get a user by ID
+    ---
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: A user object
+      404:
+        description: User not found
+    """
     users = load_users()
     user = next((u for u in users if u["id"] == user_id), None)
     if user is None:
@@ -62,6 +127,33 @@ def get_user(user_id):
 
 @app.route("/users/<int:user_id>", methods=["PUT"])
 def update_user(user_id):
+    """Update a user
+    ---
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            name:
+              type: string
+              example: Jane Doe
+            email:
+              type: string
+              example: jane@example.com
+            age:
+              type: integer
+              example: 30
+    responses:
+      200:
+        description: User updated
+      404:
+        description: User not found
+    """
     data = request.get_json()
     if not data:
         return jsonify({"error": "Request body is required"}), 400
@@ -84,6 +176,19 @@ def update_user(user_id):
 
 @app.route("/users/<int:user_id>", methods=["DELETE"])
 def delete_user(user_id):
+    """Delete a user
+    ---
+    parameters:
+      - name: user_id
+        in: path
+        type: integer
+        required: true
+    responses:
+      200:
+        description: User deleted
+      404:
+        description: User not found
+    """
     users = load_users()
     user = next((u for u in users if u["id"] == user_id), None)
     if user is None:
