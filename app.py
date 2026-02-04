@@ -1,5 +1,6 @@
 import json
 import os
+import bcrypt
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flasgger import Swagger
@@ -8,7 +9,7 @@ load_dotenv()
 
 app = Flask(__name__)
 
-API_KEY = os.environ["API_KEY"]
+API_KEY_HASH = os.environ["API_KEY_HASH"].encode()
 
 Swagger(app, template={
     "info": {
@@ -31,8 +32,8 @@ Swagger(app, template={
 def check_auth():
     if request.path.startswith(("/apidocs", "/flasgger", "/apispec")):
         return
-    token = request.headers.get("ApiKey", "")
-    if token != API_KEY:
+    token = request.headers.get("ApiKey", "").encode()
+    if not token or not bcrypt.checkpw(token, API_KEY_HASH):
         return jsonify({"error": "Unauthorized"}), 401
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "users.json")
