@@ -5,11 +5,11 @@ import threading
 import time
 import pytest
 import requests
-from app import app, DATA_FILE, API_KEY
+from app import app, DATA_FILE
 
 BASE_URL = "http://127.0.0.1:5051"
 BACKUP_FILE = DATA_FILE + ".bak"
-HEADERS = {"ApiKey": API_KEY}
+HEADERS = {"ApiKey": os.environ.get("TEST_API_KEY", "secret123")}
 
 
 @pytest.fixture(scope="session", autouse=True)
