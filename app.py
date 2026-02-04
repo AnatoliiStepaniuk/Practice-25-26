@@ -1,6 +1,8 @@
 import json
 import os
+from datetime import datetime, timedelta, timezone
 import bcrypt
+import jwt
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flasgger import Swagger
@@ -10,6 +12,8 @@ load_dotenv()
 app = Flask(__name__)
 
 API_KEY_HASH = os.environ["API_KEY_HASH"].encode()
+JWT_SECRET = os.environ["JWT_SECRET"]
+JWT_EXPIRATION_MINUTES = int(os.environ["JWT_EXPIRATION_MINUTES"])
 
 Swagger(app, template={
     "info": {
@@ -17,24 +21,72 @@ Swagger(app, template={
         "version": "1.0",
     },
     "securityDefinitions": {
-        "ApiKey": {
+        "JWT": {
             "type": "apiKey",
-            "name": "ApiKey",
+            "name": "Authorization",
             "in": "header",
-            "description": "Enter your API key, e.g.: supersecret123",
+            "description": "Paste your JWT token (obtained from /login)",
         },
     },
-    "security": [{"ApiKey": []}],
+    "security": [{"JWT": []}],
 })
+
+
+@app.route("/login", methods=["POST"])
+def login():
+    """Exchange an API key for a JWT token
+    ---
+    security: []
+    parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          required:
+            - api_key
+          properties:
+            api_key:
+              type: string
+              example: your-secret-key
+    responses:
+      200:
+        description: JWT token
+        schema:
+          properties:
+            token:
+              type: string
+      401:
+        description: Invalid API key
+    """
+    data = request.get_json()
+    if not data or "api_key" not in data:
+        return jsonify({"error": "api_key is required"}), 400
+
+    if not bcrypt.checkpw(data["api_key"].encode(), API_KEY_HASH):
+        return jsonify({"error": "Invalid API key"}), 401
+
+    payload = {
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=JWT_EXPIRATION_MINUTES),
+        "iat": datetime.now(timezone.utc),
+    }
+    token = jwt.encode(payload, JWT_SECRET, algorithm="HS256")
+    return jsonify({"token": token})
 
 
 @app.before_request
 def check_auth():
-    if request.path.startswith(("/apidocs", "/flasgger", "/apispec")):
+    if request.path.startswith(("/apidocs", "/flasgger", "/apispec", "/login")):
         return
-    token = request.headers.get("ApiKey", "").encode()
-    if not token or not bcrypt.checkpw(token, API_KEY_HASH):
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header:
         return jsonify({"error": "Unauthorized"}), 401
+    token = auth_header.removeprefix("Bearer ")
+    try:
+        jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token expired"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Invalid token"}), 401
 
 DATA_FILE = os.path.join(os.path.dirname(__file__), "users.json")
 

@@ -9,12 +9,20 @@ from app import app, DATA_FILE
 
 BASE_URL = "http://127.0.0.1:5051"
 BACKUP_FILE = DATA_FILE + ".bak"
-HEADERS = {"ApiKey": os.environ.get("TEST_API_KEY", "secret123")}
+API_KEY = os.environ.get("TEST_API_KEY", "secret123")
+HEADERS = {}
+
+
+def _login():
+    """Get a JWT token from the /login endpoint."""
+    resp = requests.post(f"{BASE_URL}/login", json={"api_key": API_KEY}, timeout=2)
+    return resp.json()["token"]
 
 
 @pytest.fixture(scope="session", autouse=True)
 def server():
     """Start the real Flask server in a background thread for the test session."""
+    global HEADERS
     if os.path.exists(DATA_FILE):
         shutil.copy2(DATA_FILE, BACKUP_FILE)
 
@@ -27,11 +35,12 @@ def server():
     # Wait until the server is ready
     for _ in range(20):
         try:
-            requests.get(f"{BASE_URL}/users", headers=HEADERS, timeout=0.5)
+            requests.post(f"{BASE_URL}/login", json={"api_key": API_KEY}, timeout=0.5)
             break
         except requests.ConnectionError:
             time.sleep(0.25)
 
+    HEADERS = {"Authorization": f"Bearer {_login()}"}
     yield
 
     if os.path.exists(BACKUP_FILE):
@@ -54,9 +63,20 @@ def test_request_without_auth():
     assert "Unauthorized" in resp.json()["error"]
 
 
-def test_request_with_wrong_key():
-    resp = requests.get(f"{BASE_URL}/users", headers={"ApiKey": "wrongkey"})
+def test_request_with_invalid_token():
+    resp = requests.get(f"{BASE_URL}/users", headers={"Authorization": "Bearer invalid"})
     assert resp.status_code == 401
+
+
+def test_login_with_wrong_key():
+    resp = requests.post(f"{BASE_URL}/login", json={"api_key": "wrongkey"})
+    assert resp.status_code == 401
+
+
+def test_login_success():
+    resp = requests.post(f"{BASE_URL}/login", json={"api_key": API_KEY})
+    assert resp.status_code == 200
+    assert "token" in resp.json()
 
 
 # ---------- GET /users ----------
