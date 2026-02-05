@@ -1,0 +1,5 @@
+flask
+flasgger
+python-dotenv
+bcrypt
+pyjwt

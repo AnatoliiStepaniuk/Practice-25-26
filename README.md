@@ -1,30 +1,52 @@
 # Users API
 
-A Flask REST API for managing users with bcrypt-based API key authentication and Swagger documentation.
+A Flask REST API for managing users with JWT authentication and Swagger documentation.
 
-## Setup
+## Running with Docker
+
+1. Build the image:
+
+```bash
+docker build -t users-api .
+```
+
+2. Run the container:
+
+```bash
+docker run -p 5050:5050 \
+  -e API_KEY_HASH='$2b$12$54NpbieqBRI2AYIw8C10rOWP2yWZ5DEDluzRttrUjdJqPdLAStsxC' \
+  -e JWT_SECRET='your-secret-key' \
+  -e JWT_EXPIRATION_MINUTES=60 \
+  users-api
+```
+
+The API key for the hash above is `secret123`. Generate a new hash for production:
+
+```bash
+python -c "import bcrypt; print(bcrypt.hashpw(b'your_password', bcrypt.gensalt()).decode())"
+```
+
+The server starts on `http://localhost:5050`.
+
+## Running locally (without Docker)
 
 1. Create a virtual environment and install dependencies:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install flask flasgger python-dotenv bcrypt requests pytest
+pip install -r requirements.txt
 ```
 
-2. Create a `.env` file with a bcrypt hash of your API key:
+2. Create a `.env` file:
 
 ```
-API_KEY_HASH=<your_bcrypt_hash>
+API_KEY_HASH=$2b$12$54NpbieqBRI2AYIw8C10rOWP2yWZ5DEDluzRttrUjdJqPdLAStsxC
+JWT_SECRET=your-secret-key
+JWT_EXPIRATION_MINUTES=60
 ```
 
-To generate a hash for a given password:
-
-```bash
-python -c "import bcrypt; print(bcrypt.hashpw(b'your_password', bcrypt.gensalt()).decode())"
-```
-
-## Running the app
+3. Run the app:
 
 ```bash
 python app.py
